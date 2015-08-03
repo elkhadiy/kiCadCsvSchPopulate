@@ -1,4 +1,5 @@
-import Component, Field
+from Component import Component
+from Field import Field
 
 class SchFile:
     'Class representing an sch file'
@@ -11,15 +12,17 @@ class SchFile:
         # Construct header
         line = lineiter.next()
         headerContent = [line]
-        while line != "$Comp":
+        while line != "$Comp\n":
             headerContent.append(line)
             line = lineiter.next()
         self.header = "".join(headerContent)
 
+        self.filelist = [self.header]
+
         # Parsing components
         self.components = []
-        line = lineiter.next()
-        while line != "$EndSCHEMATC":
+        while line != "$EndSCHEMATC\n":
+            line = lineiter.next()
             L = line.split()
             line = lineiter.next()
             U = line.split()
@@ -30,7 +33,7 @@ class SchFile:
             while line[0] == "F":
                 sline = line.split()
                 F.append(Field(sline[1], sline[2], sline[3], sline[4],
-                            sline[5], sline[6], sline[7], sline[8], "" if len(sline)==9 else sline[9]))
+                            sline[5], sline[6], sline[7], sline[8], sline[9], "" if len(sline)==10 else sline[10]))
                 line = lineiter.next()
             # useless line
             line = lineiter.next()
@@ -39,13 +42,18 @@ class SchFile:
             C = line.split()[2]
             D = line.split()[3]
             line = lineiter.next() # $EndComp
-            self.components.append(
-                        Component(L[0], L[1], U[0], U[1], U[2], P[0], P[1], F, A, B, C, D)
-                            )
-            while line != "$Comp" or line != "$EndSCHEMATC":
+            c = Component(L[1], L[2], U[1], U[2], U[3], P[1], P[2], F, A, B, C, D)
+            self.components.append(c)
+            self.filelist.append(c)
+            between2comp = []
+            while line != "$Comp\n" and line != "$EndSCHEMATC\n":
                 line = lineiter.next()
+                if line != "$Comp\n":
+                    between2comp.append(line)
+            self.filelist.extend(between2comp)
 
     def __str__(self):
-        ret = [self.header]
-        ret.extend(self.components)
-        ret.append("$EndSCHEMATC")
+        ret = []
+        for l in self.filelist:
+            ret.append(str(l))
+        return "".join(ret)

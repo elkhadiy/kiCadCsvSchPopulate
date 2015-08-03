@@ -1,7 +1,25 @@
 #!/usr/bin/python
 
 from optparse import OptionParser
-import sys, os, copy, SchFile
+import sys, os, csv
+from SchFile import SchFile
+
+def loadCSVResources(csvFile):
+    reader = csv.reader(open(csvFile), delimiter=';')
+    result = {}
+    attrs = reader.next()
+    dupkeys = []
+    for row in reader:
+        key = (row[0], row[1])
+        if key in result:
+            if key != ('',''):
+                dupkeys.append(key)
+            pass
+        result[key] = row[:]
+    print "Found ", len(dupkeys), " duplicate keys in csv file :"
+    for k in dupkeys:
+        print k
+    return result
 
 def parseFiles():
     usage = "usage: %prog [-i | --ifile] <inputfile> [-o | --ofile] <outputfile>"
@@ -28,25 +46,10 @@ def parseFiles():
         parser.error("Files supplied in the command line do not exist");
         sys.exit(2);
 
-    infile = open(options.inputfile, "r", 1)
-    outfile = open(options.outputfile, "r")
-
-    print 'kiCad File to populate : ', outfile.name
-
-    outfileContent = outfile.readlines()
-    outfile.close()
-    for line in outfileContent:
-        index = line.find('hey')
-        if index != -1:
-            print 'index : ', index, 'line : ', line
-            print outfileContent
-            print str(outfileContent.index(line))
-            outfileContent.insert(outfileContent.index(line)+1,'I found what I was looking for!\n')
-            break
-
-    outfile = open(outfile.name, "w")
-    outfileContent = "".join(outfileContent)
-    outfile.write(outfileContent)
+    resourceDict = loadCSVResources(options.inputfile)
+    infile = SchFile(options.outputfile)
+    outfile = open("DEBUG_outputfile.sch", "w")
+    outfile.write(str(infile))
     outfile.close()
 
 
