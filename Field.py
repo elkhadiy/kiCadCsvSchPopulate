@@ -14,8 +14,8 @@ class Field:
 
     def __str__(self):
         return "".join((
-                    "F ", self.field_number, " ", self.value, " ", self.orientation, " ",
-                    self.posX, " ", self.posY, " ", self.size, " ", self.Flags, " ", self.moduleType, " ", self.unknown, " ", self.name, "\n"
+                    "F ", self.field_number, " \"", self.value, "\" ", self.orientation, " ",
+                    self.posX, " ", self.posY, " ", self.size, " ", self.Flags, " ", self.moduleType, " ", self.unknown, " \"", self.name, "\"\n"
                     ))
 
 if __name__ == "__main__":

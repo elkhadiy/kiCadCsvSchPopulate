@@ -1,5 +1,7 @@
 from Component import Component
 from Field import Field
+from GrowingList import GrowingList
+import shlex
 
 class SchFile:
     'Class representing an sch file'
@@ -11,7 +13,7 @@ class SchFile:
 
         # Construct header
         line = lineiter.next()
-        headerContent = [line]
+        headerContent = []
         while line != "$Comp\n":
             headerContent.append(line)
             line = lineiter.next()
@@ -23,24 +25,29 @@ class SchFile:
         self.components = []
         while line != "$EndSCHEMATC\n":
             line = lineiter.next()
-            L = line.split()
+            L = shlex.split(line)
             line = lineiter.next()
-            U = line.split()
+            U = shlex.split(line)
             line = lineiter.next()
-            P = line.split()
-            F = []
+            P = shlex.split(line)
+            F = GrowingList()
             line = lineiter.next()
-            while line[0] == "F":
-                sline = line.split()
-                F.append(Field(sline[1], sline[2], sline[3], sline[4],
-                            sline[5], sline[6], sline[7], sline[8], sline[9], "" if len(sline)==10 else sline[10]))
+            i = 0
+            while i < 4:
+                sline = shlex.split(line)
+                F[i] = Field(sline[1], sline[2], sline[3], sline[4],
+                            sline[5], sline[6], sline[7], sline[8], sline[9], "" if len(sline)==10 else sline[10])
+                i += 1
                 line = lineiter.next()
-            # useless line
+            # exhaust fields > 3
+            while line[0] == 'F':
+                line = lineiter.next()
+            # useless redundant pos line    
             line = lineiter.next()
-            A = line.split()[0]
-            B = line.split()[1]
-            C = line.split()[2]
-            D = line.split()[3]
+            A = shlex.split(line)[0]
+            B = shlex.split(line)[1]
+            C = shlex.split(line)[2]
+            D = shlex.split(line)[3]
             line = lineiter.next() # $EndComp
             c = Component(L[1], L[2], U[1], U[2], U[3], P[1], P[2], F, A, B, C, D)
             self.components.append(c)
