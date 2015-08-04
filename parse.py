@@ -23,22 +23,22 @@ def loadCSVResources(csvFile):
                 dupkeys.append(row)
         else:
             result[key] = row[:]
-    print "Found ", len(dupkeys), " duplicate keys in csv file :"
+    print "[WARNING] Found ", len(dupkeys), " duplicate keys in csv file :"
     for k in dupkeys:
         print k
-    print "Found ", len(nofingerprint), " components with no fingerprint in csv file :"
+    print "[WARNING] Found ", len(nofingerprint), " components with no fingerprint in csv file :"
     for k in nofingerprint:
         print k
     return result, nonStandardFields
 
 def parseFiles():
-    usage = "usage: %prog [-i | --ifile] <inputfile> [-o | --ofile] <outputfile>"
-    version = "%prog 1.0"
+    usage = "usage: %prog [-d | --database] <database file> [-s | --schema] <kiCad Schema file>"
+    version = "%prog 1.1"
     parser = OptionParser(usage=usage, version=version)
-    parser.add_option("-i", "--ifile",
+    parser.add_option("-d", "--database",
                     action="store", type="string", dest="inputfile",
-                    help="Input file containing component info")
-    parser.add_option("-o", "--ofile",
+                    help="Input file containing component info (csv for example)")
+    parser.add_option("-s", "--schema",
                     action="store", type="string", dest="outputfile",
                     help="Output file where to populate component info (kiCad for example)")
 
@@ -93,12 +93,12 @@ def parseFiles():
             except:
                 componentNotInDatabase.append(comp)
 
-    print "found ", len(componentNotInDatabase), " components present in sch and not in csv : (thus not updated)"
+    print "[WARNING] Found ", len(componentNotInDatabase), " components present in sch and not in csv : (thus not updated)"
     for comp in componentNotInDatabase:
         print comp
 
 
-    outfile = open("DEBUG_outputfile.sch", "w")
+    outfile = open(options.outputfile, "w")
     outfile.write(str(infile))
     outfile.close()
 
