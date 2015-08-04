@@ -10,10 +10,11 @@ def loadCSVResources(csvFile):
     reader = csv.reader(open(csvFile), delimiter=',')
     result = {}
     attrs = reader.next()
+    nonStandardFields = attrs[attrs.index("Empreinte")+1:attrs.index("Datasheet")]
     dupkeys = []
     nofingerprint = []
     for row in reader:
-        key = (row[5], row[1])
+        key = (row[attrs.index("Empreinte")], row[attrs.index("Valeur")])
         if key[0] == '':
             if key != ('', ''):
                 nofingerprint.append(row)
@@ -28,7 +29,7 @@ def loadCSVResources(csvFile):
     print "Found ", len(nofingerprint), " components with no fingerprint in csv file :"
     for k in nofingerprint:
         print k
-    return result
+    return result, nonStandardFields
 
 def parseFiles():
     usage = "usage: %prog [-i | --ifile] <inputfile> [-o | --ofile] <outputfile>"
@@ -55,44 +56,47 @@ def parseFiles():
         parser.error("Files supplied in the command line do not exist");
         sys.exit(2);
 
-    resourceDict = loadCSVResources(options.inputfile)
+    resourceDict, nonStandardFields = loadCSVResources(options.inputfile)
     infile = SchFile(options.outputfile)
 
+    # Dictionary containing components from the sch file
     dic = {}
     for comp in infile.components:
-        if comp.fields[2].value != "" and comp.fields[2].value != "~" and comp.fields[2].value != "NPTH":
-            dic[(comp.fields[2].value, comp.fields[1].value)] = comp
+        # The dictionnary values are lists
+        try:
+            dic[(comp.fields[2].value, comp.fields[1].value)].append(comp)
+        except KeyError:
+            dic[(comp.fields[2].value, comp.fields[1].value)] = [comp]
 
     FIELD_TEXT_SIZE = "60"
 
-    print "Composant(s) à modifier : "
+    # for each component present in sch try to find info about it in the database
+    componentNotInDatabase = []
     for key, value in dic.iteritems():
-        #print key, " :: ", resourceDict[key]
-        dic[key].fields[2].Flags = "0001"
-        # Get documentation
-        dic[key].fields[3].value = resourceDict[key][13]
-        dic[key].fields[3].Flags = "0001"
-        # Get manufacturer
-        dic[key].fields[4] = Field("4", resourceDict[key][6], "H", dic[key].posX, dic[key].posY, FIELD_TEXT_SIZE,
-                                    "0001", "C", "CNN", "Manufacturer")
-        #Get reference
-        dic[key].fields[5] = Field("5", resourceDict[key][7], "H", dic[key].posX, dic[key].posY, FIELD_TEXT_SIZE,
-                                    "0001", "C", "CNN", "Reference")
-        #Get Digikey reference
-        dic[key].fields[6] = Field("6", resourceDict[key][8], "H", dic[key].posX, dic[key].posY, FIELD_TEXT_SIZE,
-                                    "0001", "C", "CNN", "Digikey Reference")
-        #Get Digikey USA link
-        dic[key].fields[7] = Field("7", resourceDict[key][9], "H", dic[key].posX, dic[key].posY, FIELD_TEXT_SIZE,
-                                    "0001", "C", "CNN", "Digikey USA Link")
-        #Get Digikey FR link
-        dic[key].fields[8] = Field("8", resourceDict[key][10], "H", dic[key].posX, dic[key].posY, FIELD_TEXT_SIZE,
-                                    "0001", "C", "CNN", "Digikey FR Link")
-        #Get Farnell link
-        dic[key].fields[9] = Field("9", resourceDict[key][11], "H", dic[key].posX, dic[key].posY, FIELD_TEXT_SIZE,
-                                    "0001", "C", "CNN", "Farnell link")
-        #Get Octopart Link
-        dic[key].fields[10] = Field("10", resourceDict[key][12], "H", dic[key].posX, dic[key].posY, FIELD_TEXT_SIZE,
-                                    "0001", "C", "CNN", "Octopart link")
+        for comp in dic[key]:
+            try:
+                # Hide the value field (always at 2 in database)
+                comp.fields[2].Flags = "0001"
+                # Add documentation (always at 3 in database)
+                comp.fields[3].value = resourceDict[key][5+len(nonStandardFields)+1]
+                comp.fields[3].Flags = "0001"
+
+                i = 0
+                FIELD_OFFSET_IN_SCH = 4
+                FIELD_OFFSET_IN_CSV = 6
+                for field in nonStandardFields:
+                    comp.fields[i+FIELD_OFFSET_IN_SCH] = Field(str(i+FIELD_OFFSET_IN_SCH),
+                                        resourceDict[key][i+FIELD_OFFSET_IN_CSV], "H",
+                                        comp.posX, comp.posY, FIELD_TEXT_SIZE,
+                                        "0001", "C", "CNN", nonStandardFields[i])
+                    i += 1
+            except:
+                componentNotInDatabase.append(comp)
+
+    print "found ", len(componentNotInDatabase), " components present in sch and not in csv : (thus not updated)"
+    for comp in componentNotInDatabase:
+        print comp
+
 
     outfile = open("DEBUG_outputfile.sch", "w")
     outfile.write(str(infile))

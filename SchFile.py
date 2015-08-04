@@ -39,10 +39,10 @@ class SchFile:
                             sline[5], sline[6], sline[7], sline[8], sline[9], "" if len(sline)==10 else sline[10])
                 i += 1
                 line = lineiter.next()
-            # exhaust fields > 3
+            # exhaust non standard fields
             while line[0] == 'F':
                 line = lineiter.next()
-            # useless redundant pos line    
+            # useless redundant pos line; the wikibook said so   
             line = lineiter.next()
             A = shlex.split(line)[0]
             B = shlex.split(line)[1]
