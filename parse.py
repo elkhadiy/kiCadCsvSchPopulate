@@ -23,12 +23,15 @@ def loadCSVResources(csvFile):
                 dupkeys.append(row)
         else:
             result[key] = row[:]
-    print "[WARNING] Found ", len(dupkeys), " duplicate keys in csv file :"
-    for k in dupkeys:
-        print k
+    if len(dupkeys) > 0:
+        print "[WARNING] Found ", len(dupkeys), " duplicate keys in csv file :"
+        for k in dupkeys:
+            print k[attrs.index("Description")], " ", k[attrs.index("Valeur")], " ", k[attrs.index("Référence")]
+    '''
     print "[WARNING] Found ", len(nofingerprint), " components with no fingerprint in csv file :"
     for k in nofingerprint:
-        print k
+        print k[attrs.index("Description")], " ", k[attrs.index("Valeur")], " ", k[attrs.index("Référence")]
+    '''
     return result, nonStandardFields
 
 def parseFiles():
@@ -93,9 +96,23 @@ def parseFiles():
             except:
                 componentNotInDatabase.append(comp)
 
-    print "[WARNING] Found ", len(componentNotInDatabase), " components present in sch and not in csv : (thus not updated)"
-    for comp in componentNotInDatabase:
-        print comp
+    if len(componentNotInDatabase) > 0:
+        pwrlist = []
+        npthlist = []
+        flglist = []
+        print "[WARNING] Found ", len(componentNotInDatabase), " components present in sch and not in csv : (thus not updated)"
+        for comp in componentNotInDatabase:
+            if comp.reference.startswith("#PWR"):
+                pwrlist.append(comp)
+            elif comp.reference.startswith("#FLG"):
+                flglist.append(comp)
+            elif comp.fields[1].value == "NPTH":
+                npthlist.append(comp)
+            else:
+                print comp.reference, " ", comp.fields[1].value
+        print len(pwrlist), " ", "components that start with \"#PWR\""
+        print len(flglist), " ", "components that start with \"#FLG\""
+        print len(npthlist), " ", "NPTH components"
 
 
     outfile = open(options.outputfile, "w")
