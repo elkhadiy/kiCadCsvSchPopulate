@@ -86,7 +86,7 @@ def parseFiles():
 
                 i = 0
                 FIELD_OFFSET_IN_SCH = 4
-                FIELD_OFFSET_IN_CSV = 6
+                FIELD_OFFSET_IN_CSV = 8
                 for field in nonStandardFields:
                     comp.fields[i+FIELD_OFFSET_IN_SCH] = Field(str(i+FIELD_OFFSET_IN_SCH),
                                         resourceDict[key][i+FIELD_OFFSET_IN_CSV], "H",
